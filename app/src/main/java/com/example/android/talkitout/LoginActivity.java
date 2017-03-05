@@ -3,7 +3,13 @@ package com.example.android.talkitout;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +26,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -28,11 +35,19 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.android.talkitout.database.ContractClass;
+import com.example.android.talkitout.database.LoginDbHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
+import static android.R.attr.id;
+import static android.R.attr.name;
+import static com.example.android.talkitout.database.ContractClass.LoginEntry.COLUMN_USER_PASSWORD;
+import static com.example.android.talkitout.database.ContractClass.LoginEntry.TABLE_NAME;
 
 /**
  * A login screen that offers login via email/password.
@@ -61,6 +76,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private Button dummy;
+    Button mEmailSignInButton;
+    Button mEmailRegisterButton;
+    private LoginDbHelper mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,29 +88,105 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
-
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                 if (id == R.id.login || id == EditorInfo.IME_NULL) {
-                    attemptLogin();
+                    attemptLogin(dummy);
                     return true;
                 }
                 return false;
             }
         });
-
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                attemptLogin();
+                attemptLogin(mEmailSignInButton);
+
+                if(mEmailView.getError()==null && mPasswordView.getError()==null )
+                {
+                   boolean validLogin = validateLogin(mEmailView.getText().toString().trim(),
+                            mPasswordView.getText().toString().trim(), getBaseContext());
+
+                    if(validLogin) {
+
+                        Intent in = new Intent(getBaseContext(), UserHomePage.class);
+                        //in.putExtra("UserName", muname.getText().toString());
+                        startActivity(in);
+                    }
+                }
             }
         });
 
+        mEmailRegisterButton = (Button) findViewById(R.id.email_register_button);
+        mEmailRegisterButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                attemptLogin(mEmailRegisterButton);
+                if(mEmailView.getError()==null && mPasswordView.getError()==null)
+                {
+                        Intent i = new Intent(LoginActivity.this,AddProfile.class);
+                        startActivity(i);
+                        finish();
+                }
+            }
+        });
+
+
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean validateLogin(String username, String password, Context baseContext) {
+
+        mDbHelper = new LoginDbHelper(getBaseContext());
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        String[] columns = {BaseColumns._ID};
+
+        String selection = "name=? AND password=?";
+        String[] selectionArgs = {username,password};
+
+        Cursor cursor = null;
+
+        try {
+            cursor = db.query(ContractClass.LoginEntry.TABLE_NAME, columns, selection, selectionArgs, null, null, null);
+            startManagingCursor(cursor);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        String password1="SELECT password FROM login WHERE name =? AND password =?";
+        Cursor c =db.rawQuery(password1,new String[]{username,password});
+        if(c.getCount() != 0) {
+            c.close();
+            return true;
+        }else{
+            Toast.makeText(getApplicationContext(), "User Name and Password miss match..\nPlease Try Again", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(getBaseContext(), LoginActivity.class);
+            startActivity(intent);
+            c.close();
+            return false;
+        }
+
+    }
+    private boolean saveData() {
+        String name = mEmailView.getText().toString().trim();
+        String password = mPasswordView.getText().toString().trim();
+        ContentValues values = new ContentValues();
+        values.put(ContractClass.LoginEntry.COLUMN_USER_NAME,name);
+        values.put(ContractClass.LoginEntry.COLUMN_USER_PASSWORD,password);
+        Uri newRowUri = getContentResolver().insert(ContractClass.LoginEntry.CONTENT_URI, values);
+
+        // If the row URI is null, this means a new row was not successfully inserted into the table
+        if (newRowUri == null) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private void populateAutoComplete() {
@@ -143,7 +238,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    private void attemptLogin() {
+    private void attemptLogin(Button btn) {
         if (mAuthTask != null) {
             return;
         }
@@ -164,6 +259,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
+        }else if (TextUtils.isEmpty(password)) {
+            mPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mPasswordView;
+            cancel = true;
         }
 
         // Check for a valid email address.
@@ -175,6 +274,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mEmailView.setError(getString(R.string.error_invalid_email));
             focusView = mEmailView;
             cancel = true;
+        }else if(btn==mEmailRegisterButton && !saveData()){
+            mEmailView.setError(getString(R.string.error_inserting_data));
+            focusView = mEmailView;
+            cancel=true;
         }
 
         if (cancel) {
@@ -243,7 +346,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 Uri.withAppendedPath(ContactsContract.Profile.CONTENT_URI,
                         ContactsContract.Contacts.Data.CONTENT_DIRECTORY), ProfileQuery.PROJECTION,
 
-                // Select only email addresses.
+                // AddProfile only email addresses.
                 ContactsContract.Contacts.Data.MIMETYPE +
                         " = ?", new String[]{ContactsContract.CommonDataKinds.Email
                 .CONTENT_ITEM_TYPE},
