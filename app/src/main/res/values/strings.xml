@@ -14,7 +14,14 @@
         completions."
     </string>
     <string name="title_activity_user_home_page">UserHomePage</string>
-
+    <string name="enter_credentials">Enter Your Credentials</string>
+    <string name="name">Name</string>
+    <string name="email">Email</string>
+    <string name="phone">Phone No.</string>
+    <string name="date">D.O.B</string>
+    <string name="submit">Submit</string>
+    <string name="mail">info.talkitout@gmail.com</string>
+    <string name="contact_us">Contact Us At:</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="error_inserting_data">This email is already registed.</string>

@@ -10,10 +10,10 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 
 /**
- * Created by Prerna on 3/4/2017.
+ * Created by Prerna on 3/6/2017.
  */
 
-public class LoginProvider extends ContentProvider {
+public class DetailsProvider extends ContentProvider {
 
     public static final int LOGIN = 100;
     public static final int LOGIN_ID = 101;
@@ -23,17 +23,17 @@ public class LoginProvider extends ContentProvider {
     // Static initializer. This is run the first time anything is called from this class.
     static {
 
-        sUriMatcher.addURI(ContractClass.CONTENT_AUTHORITY, ContractClass.PATH, LOGIN);
+        sUriMatcher.addURI(ContractClass.CONTENT_AUTHORITY1, ContractClass.PATH1, LOGIN);
 
 
-        sUriMatcher.addURI(ContractClass.CONTENT_AUTHORITY, ContractClass.PATH + "/#", LOGIN_ID);
+        sUriMatcher.addURI(ContractClass.CONTENT_AUTHORITY1, ContractClass.PATH1 + "/#", LOGIN_ID);
     }
 
-    private LoginDbHelper mDbHelper;
+    private DetailsDbHelper mDbHelper;
 
     @Override
     public boolean onCreate() {
-        mDbHelper = new LoginDbHelper(getContext());
+        mDbHelper = new DetailsDbHelper(getContext());
         return true;
     }
 
@@ -51,15 +51,15 @@ public class LoginProvider extends ContentProvider {
         switch (match) {
             case LOGIN:
 
-                cursor = database.query(ContractClass.LoginEntry.TABLE_NAME, projection, selection, selectionArgs,
+                cursor = database.query(ContractClass.LoginEntry.TABLE_SAVE, projection, selection, selectionArgs,
                         null, null, sortOrder);
                 break;
             case LOGIN_ID:
 
-                selection = ContractClass.LoginEntry._ID + "=?";
+                selection = ContractClass.LoginEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
 
-                cursor = database.query(ContractClass.LoginEntry.TABLE_NAME, projection, selection, selectionArgs,
+                cursor = database.query(ContractClass.LoginEntry.TABLE_SAVE, projection, selection, selectionArgs,
                         null, null, sortOrder);
                 break;
             default:
@@ -81,10 +81,10 @@ public class LoginProvider extends ContentProvider {
         switch (match) {
             // Return the MIME type for the whole directory, aka ALL the rows of the pets table
             case LOGIN:
-                return ContractClass.LoginEntry.CONTENT_LIST_TYPE;
+                return ContractClass.LoginEntry.CONTENT_LIST_TYPE1;
             // Return the MIME type for a single item, aka a single row of the pets table
             case LOGIN_ID:
-                return ContractClass.LoginEntry.CONTENT_ITEM_TYPE;
+                return ContractClass.LoginEntry.CONTENT_ITEM_TYPE1;
             default:
                 throw new IllegalStateException("Unknown URI " + uri + " with match " + match);
         }    }
@@ -102,20 +102,25 @@ public class LoginProvider extends ContentProvider {
 
     private Uri insertUser(Uri uri, ContentValues values) {
 
-        String name = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_EMAIL);
-        if (name == null) {
+        String name = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_NAME);
+        if (name == null ) {
             throw new IllegalArgumentException("User requires a name");
         }
+        String email = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_EMAIL1);
 
-        String password = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_PASSWORD);
-        if (password == null ) {
-            throw new IllegalArgumentException("User requires a password");
+        String phone = values.getAsString(ContractClass.LoginEntry.COLUMN_PHONE_NO);
+        if (phone == null ) {
+            throw new IllegalArgumentException("User requires a phone");
+        }
+        String dob = values.getAsString(ContractClass.LoginEntry.COLUMN_DOB);
+        if (dob == null ) {
+            throw new IllegalArgumentException("User requires a D.O.B");
         }
 
 
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
-        long id = database.insert(ContractClass.LoginEntry.TABLE_NAME, null, values);
+        long id = database.insert(ContractClass.LoginEntry.TABLE_SAVE, null, values);
 
         // If the ID is -1, then the insertion failed. Log an error and return null.
         if (id == -1) {
@@ -145,16 +150,16 @@ public class LoginProvider extends ContentProvider {
         switch(match) {
             // Delete all rows that match the selection and selection args
             case LOGIN:
-                rowsDeleted = database.delete(ContractClass.LoginEntry.TABLE_NAME, selection, selectionArgs);
+                rowsDeleted = database.delete(ContractClass.LoginEntry.TABLE_SAVE, selection, selectionArgs);
                 break;
             // Delete a single row given by the ID in the URI
             case LOGIN_ID:
                 // For the LOGIN_ID code, extract out the ID from the URI,
                 // so we know which row to delete. Selection will be "_id=?" and selection
                 // arguments will be a String array containing the actual ID passed in with the URI.
-                selection = ContractClass.LoginEntry._ID + "=?";
+                selection = ContractClass.LoginEntry._ID1 + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
-                rowsDeleted = database.delete(ContractClass.LoginEntry.TABLE_NAME, selection, selectionArgs);
+                rowsDeleted = database.delete(ContractClass.LoginEntry.TABLE_SAVE, selection, selectionArgs);
                 break;
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
@@ -176,7 +181,7 @@ public class LoginProvider extends ContentProvider {
             case LOGIN:
                 return updateUser(uri, values, selection, selectionArgs);
             case LOGIN_ID:
-                selection = ContractClass.LoginEntry._ID + "=?";
+                selection = ContractClass.LoginEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
                 return updateUser(uri, values, selection, selectionArgs);
             default:
@@ -190,27 +195,40 @@ public class LoginProvider extends ContentProvider {
 
         // INPUT VALIDATION
         // Check if the user is attempting to update the "name" column for X number of rows
-        if (values.containsKey(ContractClass.LoginEntry.COLUMN_USER_EMAIL)) {
-            // Check that the user's desired value for the name is not null.
-            String name = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_EMAIL);
-            if (name == null) {
-                throw new IllegalArgumentException("User requires a name");
+        if (values.containsKey(ContractClass.LoginEntry.COLUMN_USER_EMAIL1)) {
+            // Check that the user's desired value for the email is not null.
+            String email = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_EMAIL1);
+            if (email == null) {
+                throw new IllegalArgumentException("User requires a email");
             }
         }
 
-        // Check if the user is attempting to update the "password" column for X number of rows
-        if (values.containsKey(ContractClass.LoginEntry.COLUMN_USER_PASSWORD)) {
-            Integer password = values.getAsInteger(ContractClass.LoginEntry.COLUMN_USER_PASSWORD);
-            if (password == null ) {
-                throw new IllegalArgumentException("User requires valid password");
+        if (values.containsKey(ContractClass.LoginEntry.COLUMN_USER_NAME)) {
+            String name = values.getAsString(ContractClass.LoginEntry.COLUMN_USER_NAME);
+            if (name == null ) {
+                throw new IllegalArgumentException("User requires valid name");
             }
         }
+        if (values.containsKey(ContractClass.LoginEntry.COLUMN_PHONE_NO)) {
+            Integer phone_no = values.getAsInteger(ContractClass.LoginEntry.COLUMN_PHONE_NO);
+            if (phone_no == null ) {
+                throw new IllegalArgumentException("User requires valid phone_no");
+            }
+        }
+        if (values.containsKey(ContractClass.LoginEntry.COLUMN_DOB)) {
+            String dob = values.getAsString(ContractClass.LoginEntry.COLUMN_DOB);
+            if (dob == null ) {
+                throw new IllegalArgumentException("User requires valid dob");
+            }
+        }
+
+
 
         // Get writable database
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
         // Update the database with the given values.
-        int rowsUpdated = database.update(ContractClass.LoginEntry.TABLE_NAME, values, selection, selectionArgs);
+        int rowsUpdated = database.update(ContractClass.LoginEntry.TABLE_SAVE, values, selection, selectionArgs);
 
         // If rows were updated, notify all listeners that the content URI has changed,
         // and the current Cursor is stale.

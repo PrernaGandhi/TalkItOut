@@ -8,10 +8,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
 import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
 
@@ -26,7 +27,6 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -44,10 +44,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
-import static android.R.attr.id;
-import static android.R.attr.name;
-import static com.example.android.talkitout.database.ContractClass.LoginEntry.COLUMN_USER_PASSWORD;
-import static com.example.android.talkitout.database.ContractClass.LoginEntry.TABLE_NAME;
 
 /**
  * A login screen that offers login via email/password.
@@ -128,6 +124,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 if(mEmailView.getError()==null && mPasswordView.getError()==null)
                 {
                         Intent i = new Intent(LoginActivity.this,AddProfile.class);
+                    //i.putExtra("Info","\n");
                         startActivity(i);
                         finish();
                 }
@@ -139,6 +136,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
     }
 
+    @Override
+    public void onBackPressed() {
+
+            super.onBackPressed();
+    }
     @SuppressWarnings("deprecation")
     private boolean validateLogin(String username, String password, Context baseContext) {
 
@@ -147,7 +149,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         String[] columns = {BaseColumns._ID};
 
-        String selection = "name=? AND password=?";
+        String selection = "email=? AND password=?";
         String[] selectionArgs = {username,password};
 
         Cursor cursor = null;
@@ -159,7 +161,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             e.printStackTrace();
         }
 
-        String password1="SELECT password FROM login WHERE name =? AND password =?";
+        String password1="SELECT password FROM login WHERE email =? AND password =?";
         Cursor c =db.rawQuery(password1,new String[]{username,password});
         if(c.getCount() != 0) {
             c.close();
@@ -177,7 +179,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         String name = mEmailView.getText().toString().trim();
         String password = mPasswordView.getText().toString().trim();
         ContentValues values = new ContentValues();
-        values.put(ContractClass.LoginEntry.COLUMN_USER_NAME,name);
+        values.put(ContractClass.LoginEntry.COLUMN_USER_EMAIL,name);
         values.put(ContractClass.LoginEntry.COLUMN_USER_PASSWORD,password);
         Uri newRowUri = getContentResolver().insert(ContractClass.LoginEntry.CONTENT_URI, values);
 
@@ -294,12 +296,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
         return email.contains("@");
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() > 4;
     }
 
@@ -426,7 +426,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }
             }
 
-            // TODO: register the new account here.
             return true;
         }
 

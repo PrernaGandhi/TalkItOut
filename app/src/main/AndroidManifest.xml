@@ -28,15 +28,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddProfile" />
+        <activity android:name=".AddProfile"
+            android:label="@string/enter_credentials"/>
         <activity
             android:name=".UserHomePage"
             android:label="@string/title_activity_user_home_page"
             android:theme="@style/AppTheme.NoActionBar"/>
         <provider
-            android:authorities="com.example.android.talkitout"
+            android:authorities="com.example.android.talkitout.database.LoginProvider"
             android:name=".database.LoginProvider"
             android:exported="false"/>
+        <provider
+            android:authorities="com.example.android.talkitout.database.DetailsProvider"
+            android:name=".database.DetailsProvider"/>
     </application>
 
 </manifest>

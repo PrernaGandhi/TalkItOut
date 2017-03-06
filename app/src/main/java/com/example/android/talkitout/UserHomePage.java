@@ -1,5 +1,10 @@
 package com.example.android.talkitout;
 
+import android.content.ContentUris;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -12,9 +17,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.android.talkitout.database.ContractClass;
+import com.example.android.talkitout.database.DetailsDbHelper;
+import com.example.android.talkitout.database.LoginDbHelper;
+
+import static com.example.android.talkitout.R.id.fab;
 
 public class UserHomePage extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private TextView mName;
+    private TextView mEmail;
+    private DetailsDbHelper mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +39,36 @@ public class UserHomePage extends AppCompatActivity
         setContentView(R.layout.activity_user_home_page);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        View navHeaderView = navigationView.inflateHeaderView(R.layout.nav_header_user_home_page);
+        mName = (TextView) navHeaderView.findViewById(R.id.NAME);
+        mEmail = (TextView) navHeaderView.findViewById(R.id.EMAIL);
+       mDbHelper = new DetailsDbHelper(getBaseContext());
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
+        Cursor cursor;
+        cursor=db.query(ContractClass.LoginEntry.TABLE_SAVE,new String[] {"user_name","email1"},null,null,null,null,null);
+        if (cursor.moveToFirst()){
+            do{
+                String name = cursor.getString(0);
+                String email = cursor.getString(1);
+                // do what ever you want here
+                mName.setText(name);
+                mEmail.setText(email);
+            }while(cursor.moveToNext());
+        }
+
+        cursor.close();
+/*
+        Bundle getDetails=getIntent().getExtras();
+        String Info=getDetails.getString("Details");
+
+        String[] details = Info.split("\n");
+        mName = (TextView) navHeaderView.findViewById(R.id.NAME);
+        mEmail = (TextView) navHeaderView.findViewById(R.id.EMAIL);
+        mName.setText(details[0]);
+        mEmail.setText(details[1]);
+*/
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -38,9 +84,10 @@ public class UserHomePage extends AppCompatActivity
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+       navigationView.setNavigationItemSelectedListener(this);
+
     }
+
 
     @Override
     public void onBackPressed() {
@@ -79,20 +126,26 @@ public class UserHomePage extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-/*
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
 
-        } else if (id == R.id.nav_slideshow) {
+        if (id == R.id.nav_profile) {
+            Intent i = new Intent(UserHomePage.this,AddProfile.class);
+            Uri currentUri = ContentUris.withAppendedId(ContractClass.LoginEntry.CONTENT_URI1, id);
+            i.setData(currentUri);
+            startActivity(i);
 
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.nav_questionaire) {
 
-        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_psychologist) {
+
+        } else if (id == R.id.nav_psychiatrist) {
+
+        } else if(id ==R.id.nav_delight_room){
+
+        }else if (id == R.id.nav_share) {
 
         } else if (id == R.id.nav_send) {
 
-        }*/
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);

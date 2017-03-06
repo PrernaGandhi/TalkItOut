@@ -5,8 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import com.example.android.talkitout.database.ContractClass.LoginEntry;
 
-import static android.R.attr.version;
-
 /**
  * Created by Prerna on 3/4/2017.
  */
@@ -32,10 +30,10 @@ public class LoginDbHelper extends SQLiteOpenHelper {
     private static final String SQL_CREATE_LOGIN_TABLE =
             "CREATE TABLE " + LoginEntry.TABLE_NAME  + " (" +
                     LoginEntry._ID + INTEGER + AUTOINCREMENT + COMMA_SEP +
-                    LoginEntry.COLUMN_USER_NAME + TEXT +UNIQUE+ NOT_NULL + COMMA_SEP +
-                    LoginEntry.COLUMN_USER_PASSWORD + TEXT + NOT_NULL +
-                    ");";
-
+                    LoginEntry.COLUMN_USER_EMAIL + TEXT +UNIQUE+ NOT_NULL + COMMA_SEP +
+                    LoginEntry.COLUMN_USER_PASSWORD + TEXT + NOT_NULL + COMMA_SEP +
+                    " FOREIGN KEY ("+LoginEntry.COLUMN_USER_EMAIL+") REFERENCES " +
+                    LoginEntry.TABLE_SAVE +" ("+LoginEntry.COLUMN_USER_EMAIL+")" + ");";
 
     public LoginDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
